@@ -1,10 +1,9 @@
 package com.rockhopper.resumequeue.demo;
 
 import java.util.HashSet;
-import java.util.Iterator;
 
 import android.support.v7.app.AppCompatActivity;
-import com.rockhopper.resumequeue.ResumeStateObservable;
+import com.rockhopper.resumequeue.ResumeStateListener;
 import com.rockhopper.resumequeue.ResumeStateProvider;
 
 /**
@@ -12,13 +11,13 @@ import com.rockhopper.resumequeue.ResumeStateProvider;
  */
 public class PauseAwareActivity extends AppCompatActivity implements ResumeStateProvider {
 	private boolean mPaused = true;
-	private HashSet<ResumeStateObservable.ResumeStateListener> mListeners = new HashSet<>();
+	private HashSet<ResumeStateListener> mListeners = new HashSet<>();
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 		mPaused = false;
-		for (ResumeStateObservable.ResumeStateListener mListener : mListeners) {
+		for (ResumeStateListener mListener : mListeners) {
 			mListener.onResumedChanged(true);
 		}
 	}
@@ -27,13 +26,13 @@ public class PauseAwareActivity extends AppCompatActivity implements ResumeState
 	protected void onPause() {
 		super.onPause();
 		mPaused = true;
-		for (ResumeStateObservable.ResumeStateListener mListener : mListeners) {
+		for (ResumeStateListener mListener : mListeners) {
 			mListener.onResumedChanged(false);
 		}
 	}
 
 	// --------------
-	// Interface ResumeQueue
+	// Interface RxResumeQueueBus
 	// --------------
 
 	@Override
@@ -42,7 +41,7 @@ public class PauseAwareActivity extends AppCompatActivity implements ResumeState
 	}
 
 	@Override
-	public void addResumeStateListener(ResumeStateObservable.ResumeStateListener listener, boolean callListener) {
+	public void addResumeStateListener(ResumeStateListener listener, boolean callListener) {
 		mListeners.add(listener);
 		if (callListener) {
 			listener.onResumedChanged(isResumeState());
@@ -50,7 +49,7 @@ public class PauseAwareActivity extends AppCompatActivity implements ResumeState
 	}
 
 	@Override
-	public void removeResumeStateListener(ResumeStateObservable.ResumeStateListener listener) {
+	public void removeResumeStateListener(ResumeStateListener listener) {
 		mListeners.remove(listener);
 	}
 }

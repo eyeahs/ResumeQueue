@@ -5,9 +5,8 @@ import java.util.concurrent.TimeUnit;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import com.rockhopper.resumequeue.ResumeQueue;
-import com.rockhopper.resumequeue.ResumeStateObservable;
-import com.rockhopper.resumequeue.RxValve;
+import com.rockhopper.resumequeue.RxResumeQueueBus;
+import com.rockhopper.resumequeue.RxResumeQueue;
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action1;
@@ -31,7 +30,7 @@ public class DemoActivity extends PauseAwareActivity {
 		// -----------------
 
 		// Explanation this will retrieve all String events, if they are not exclusively bound to a key as well
-		Subscription queuedSubscription = ResumeQueue.Builder.create(String.class)
+		Subscription queuedSubscription = RxResumeQueueBus.Builder.create(String.class)
 			.setResumeStateProvider(this)
 			.withOnNext(new Action1<String>() {
 				@Override
@@ -43,7 +42,6 @@ public class DemoActivity extends PauseAwareActivity {
 			.buildSubscription();
 		mSubscriptions.add(queuedSubscription);
 
-
 		Observable.interval(5, TimeUnit.SECONDS)
 			.doOnNext(new Action1<Long>() {
 				@Override
@@ -51,7 +49,7 @@ public class DemoActivity extends PauseAwareActivity {
 					Log.d("PHW", "INTERVAL - " + aLong);
 				}
 			})
-			.lift(new RxValve<Long>(ResumeStateObservable.create(this), isResumeState()))
+			.lift(RxResumeQueue.<Long>create(this))
 			.subscribe(new Action1<Long>() {
 				@Override
 				public void call(Long aLong) {

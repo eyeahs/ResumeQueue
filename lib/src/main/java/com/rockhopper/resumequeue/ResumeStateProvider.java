@@ -6,7 +6,7 @@ package com.rockhopper.resumequeue;
 public interface ResumeStateProvider {
 	boolean isResumeState();
 
-	void addResumeStateListener(ResumeStateObservable.ResumeStateListener listener, boolean callListener);
+	void addResumeStateListener(ResumeStateListener listener, boolean callListener);
 
-	void removeResumeStateListener(ResumeStateObservable.ResumeStateListener listener);
+	void removeResumeStateListener(ResumeStateListener listener);
 }

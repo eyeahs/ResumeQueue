@@ -16,14 +16,14 @@ import rx.subjects.SerializedSubject;
 /**
  * Created by Prometheus on 22.04.2016.
  */
-public class ResumeQueue {
+public class RxResumeQueueBus {
 
 	//region SINGLETON
-	private static ResumeQueue INSTANCE = null;
+	private static RxResumeQueueBus INSTANCE = null;
 
-	public static ResumeQueue get() {
+	public static RxResumeQueueBus get() {
 		if (INSTANCE == null) {
-			INSTANCE = new ResumeQueue();
+			INSTANCE = new RxResumeQueueBus();
 		}
 		return INSTANCE;
 	}
@@ -154,12 +154,10 @@ public class ResumeQueue {
 
 		@SuppressWarnings("unchecked")
 		private Observable<O> buildObservable() {
-			final Observable<Boolean> resumeStateObservable = ResumeStateObservable.create(mIsResumedProvider);
-			final boolean isResumed = mIsResumedProvider.isResumeState();
-			return ResumeQueue.get()
+			return RxResumeQueueBus.get()
 				.observeEvent(mKeyClass)
 				.onBackpressureBuffer()
-				.lift(new RxValve<>(resumeStateObservable, mValvePrefetch, isResumed))
+				.lift(RxResumeQueue.create(mIsResumedProvider))
 				.compose(defaultSchedulers);
 		}
 
