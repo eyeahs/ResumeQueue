@@ -1,5 +1,6 @@
 package com.rockhopper.resumequeue;
 
+import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -14,45 +15,43 @@ import rx.exceptions.MissingBackpressureException;
 import rx.internal.operators.BackpressureUtils;
 import rx.internal.operators.NotificationLite;
 import rx.internal.util.ExceptionsUtils;
-import rx.internal.util.RxJavaPluginUtils;
 import rx.internal.util.atomic.SpscAtomicArrayQueue;
+import rx.plugins.RxJavaHooks;
 
 // http://akarnokd.blogspot.kr/2016/03/subscribeon-and-observeon.html
 // From https://gist.github.com/akarnokd/1c54e5a4f64f9b1e46bdcf62b4222f08
 public final class RxResumeQueue {
 
-	public static <T> RxValue<T> create(final ResumeStateProvider provider) {
-		return new RxValue<>(Observable.create(new Observable.OnSubscribe<Boolean>() {
+	public static <T> RxValve<T> create(final ResumeStateProvider provider) {
+		return new RxValve<>(Observable.create(new Observable.OnSubscribe<Boolean>() {
 			@Override
 			public void call(final Subscriber<? super Boolean> subscriber) {
-				ResumeStateListener resumedListener = new ResumeStateListener() {
-					@Override
-					public void onResumedChanged(boolean resumed) {
-						if (subscriber.isUnsubscribed()) {
-							provider.removeResumeStateListener(this);
-						} else {
-							subscriber.onNext(resumed);
-						}
-					}
-				};
-
 				if (!subscriber.isUnsubscribed()) {
-					provider.addResumeStateListener(resumedListener, false);
+					provider.addResumeStateListener(new ResumeStateProvider.ResumeStateListener() {
+						@Override
+						public void onResumedChanged(Iterator iterator, boolean resumed) {
+							if (subscriber.isUnsubscribed() && iterator != null) {
+								iterator.remove();
+							} else {
+								subscriber.onNext(resumed);
+							}
+						}
+					});
 				}
 			}
 		}).onBackpressureBuffer(), provider.isResumeState());
 	}
 
-	private static class RxValue<T> implements Operator<T, T> {
+	private static class RxValve<T> implements Operator<T, T> {
 		final Observable<Boolean> other;
 		final int prefetch;
 		final boolean defaultState;
 
-		public RxValue(Observable<Boolean> other, boolean defaultState) {
+		RxValve(Observable<Boolean> other, boolean defaultState) {
 			this(other, 1000, defaultState);
 		}
 
-		public RxValue(Observable<Boolean> other, int prefetch, boolean defaultState) {
+		RxValve(Observable<Boolean> other, int prefetch, boolean defaultState) {
 			this.other = other;
 			this.prefetch = prefetch;
 			this.defaultState = defaultState;
@@ -120,7 +119,7 @@ public final class RxResumeQueue {
 					done = true;
 					drain();
 				} else {
-					RxJavaPluginUtils.handleException(e);
+					RxJavaHooks.onError(e);
 				}
 			}
 
@@ -143,7 +142,7 @@ public final class RxResumeQueue {
 					done = true;
 					drain();
 				} else {
-					RxJavaPluginUtils.handleException(e);
+					RxJavaHooks.onError(e);
 				}
 			}
 

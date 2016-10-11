@@ -3,7 +3,7 @@ package com.rockhopper.resumequeue.demo;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import com.rockhopper.resumequeue.RxResumeQueueBus;
+import com.rockhopper.resumequeue.RxBus;
 
 public class NewActivity extends AppCompatActivity {
 
@@ -16,6 +16,6 @@ public class NewActivity extends AppCompatActivity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		RxResumeQueueBus.get().sendEvent("Test");
+		RxBus.get().sendEvent("Test");
 	}
 }

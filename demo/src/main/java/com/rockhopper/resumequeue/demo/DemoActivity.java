@@ -4,8 +4,10 @@ import java.util.concurrent.TimeUnit;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import com.rockhopper.resumequeue.RxResumeQueueBus;
+import com.rockhopper.resumequeue.ResumeStateProvider;
+import com.rockhopper.resumequeue.RxBus;
 import com.rockhopper.resumequeue.RxResumeQueue;
 import rx.Observable;
 import rx.Subscription;
@@ -15,11 +17,12 @@ import rx.subscriptions.CompositeSubscription;
 /**
  * Created by flisar on 28.04.2016.
  */
-public class DemoActivity extends PauseAwareActivity {
-	private static final String TAG = PauseAwareActivity.class.getSimpleName();
+public class DemoActivity extends AppCompatActivity {
+	private static final String TAG = DemoActivity.class.getSimpleName();
 
 	// for demo purposes we use a static list and only add items to it when activity is created
-	private static CompositeSubscription mSubscriptions = new CompositeSubscription();
+	private static CompositeSubscription subscriptions = new CompositeSubscription();
+	private static ResumeStateProvider resumeStateProvider = new ResumeStateProvider();
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -30,8 +33,8 @@ public class DemoActivity extends PauseAwareActivity {
 		// -----------------
 
 		// Explanation this will retrieve all String events, if they are not exclusively bound to a key as well
-		Subscription queuedSubscription = RxResumeQueueBus.Builder.create(String.class)
-			.setResumeStateProvider(this)
+		Subscription queuedSubscription = RxBus.Builder.create(String.class)
+			.setResumeStateProvider(resumeStateProvider)
 			.withOnNext(new Action1<String>() {
 				@Override
 				public void call(String s) {
@@ -40,7 +43,7 @@ public class DemoActivity extends PauseAwareActivity {
 				}
 			})
 			.buildSubscription();
-		mSubscriptions.add(queuedSubscription);
+		subscriptions.add(queuedSubscription);
 
 		Observable.interval(5, TimeUnit.SECONDS)
 			.doOnNext(new Action1<Long>() {
@@ -49,7 +52,7 @@ public class DemoActivity extends PauseAwareActivity {
 					Log.d("PHW", "INTERVAL - " + aLong);
 				}
 			})
-			.lift(RxResumeQueue.<Long>create(this))
+			.lift(RxResumeQueue.<Long>create(resumeStateProvider))
 			.subscribe(new Action1<Long>() {
 				@Override
 				public void call(Long aLong) {
@@ -61,9 +64,21 @@ public class DemoActivity extends PauseAwareActivity {
 	}
 
 	@Override
+	protected void onResume() {
+		super.onResume();
+		resumeStateProvider.onResume();
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		resumeStateProvider.onPause();
+	}
+
+	@Override
 	public void onDestroy() {
 		// unsubscribe
-		mSubscriptions.clear();
+		subscriptions.clear();
 		super.onDestroy();
 	}
 
@@ -72,6 +87,6 @@ public class DemoActivity extends PauseAwareActivity {
 	// -----------------------------
 
 	private String getIsResumedMessage() {
-		return "isResumeState=" + isResumeState();
+		return "isResumeState=" + resumeStateProvider.isResumeState();
 	}
 }

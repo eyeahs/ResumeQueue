@@ -16,15 +16,12 @@ import rx.subjects.SerializedSubject;
 /**
  * Created by Prometheus on 22.04.2016.
  */
-public class RxResumeQueueBus {
+public class RxBus {
 
 	//region SINGLETON
-	private static RxResumeQueueBus INSTANCE = null;
+	private static RxBus INSTANCE = new RxBus();
 
-	public static RxResumeQueueBus get() {
-		if (INSTANCE == null) {
-			INSTANCE = new RxResumeQueueBus();
-		}
+	public static RxBus get() {
 		return INSTANCE;
 	}
 	//endregion
@@ -61,7 +58,7 @@ public class RxResumeQueueBus {
 	 * @param  eventClass  the class of event you want to observe
 	 * @return an Observable, that will observe all events of the @param key class
 	 */
-	public synchronized <T> Observable<T> observeEvent(Class<T> eventClass) {
+	public <T> Observable<T> observeEvent(Class<T> eventClass) {
 		if (eventClass == null) {
 			throw new RuntimeException("Null event");
 		}
@@ -154,7 +151,7 @@ public class RxResumeQueueBus {
 
 		@SuppressWarnings("unchecked")
 		private Observable<O> buildObservable() {
-			return RxResumeQueueBus.get()
+			return RxBus.get()
 				.observeEvent(mKeyClass)
 				.onBackpressureBuffer()
 				.lift(RxResumeQueue.create(mIsResumedProvider))
