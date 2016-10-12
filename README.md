@@ -3,6 +3,7 @@
 https://github.com/MFlisar/RXBus에서 Fork함
 
 Observable의 chain에 
+
     .lift(RxResumeQueue.<Long>create(resumeStateProvider))
     
 를 추가하면
